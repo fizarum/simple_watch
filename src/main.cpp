@@ -1,39 +1,44 @@
 #include <Arduino.h>
 
 #include "dev/dev_controller.h"
+#include "utils.h"
 
 #define REFRESH_DELAY 5000
 
 void init_button();
 unsigned long getLastRefreshDisplayTime();
 
-volatile bool showDisplay = false;
+volatile bool showDisplay = true;
 unsigned long lastDisplayRefreshTime = 0;
 DevController *deviceController;
 /////
 
 void setup() {
-    Serial.begin(9600);
+    
+    set_cpu_speed_down();
 
     deviceController = new DevController();
 
     deviceController->init();
     init_button();
+    Serial.begin(115200);
 }
 
 void loop() {
     deviceController->getDisplay()->setEnabled(showDisplay);
-
     if(deviceController->getDisplay()->isEnabled() &&
         getLastRefreshDisplayTime() >= REFRESH_DELAY) {
+            Serial.printf("time to update\n freq: %d\n", get_cpu_freq());
             deviceController->getDisplay()->update();
             lastDisplayRefreshTime = millis();
-            const char * time = deviceController->getRtc()->timeStr();
-            const char *date = deviceController->getRtc()->dateStr();
-            deviceController->getDisplay()->text(time, 3, DisplayST7735::colorGreen, 20, 40);
-            deviceController->getDisplay()->text(date, 1, DisplayST7735::colorBlue, 70, 100);
-            free((void*)time);
-            free((void*)date);
+
+            // deviceController->getDisplay()->text("Hello", 3, DisplayST7735::colorGreen, 20, 40);
+            // deviceController->getDisplay()->text("world", 1, DisplayST7735::colorBlue, 70, 100);
+            
+            char text[20];
+            get_cpu_freq_str(text, get_cpu_freq());
+            //sprintf(text, "frq: %d", get_cpu_freq());
+            deviceController->getDisplay()->text(text, 1, DisplayST7735::colorRed, 10, 10);
         }
 }
 
@@ -49,7 +54,7 @@ void init_button() {
 unsigned long getLastRefreshDisplayTime() {
     if(lastDisplayRefreshTime == 0) {
         lastDisplayRefreshTime = millis();
-        return 0;
+        return REFRESH_DELAY;
     }
 
     return millis() - lastDisplayRefreshTime;

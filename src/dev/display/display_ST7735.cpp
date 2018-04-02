@@ -4,18 +4,26 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library
 #include <SPI.h>
 
-#define TFT_CS     10
-#define TFT_RST    9
-#define TFT_DC     8
+#define TFT_CS     16
+#define TFT_RST    33
+//A0
+#define TFT_DC     17
 
-#define TFT_SCLK 13
-#define TFT_MOSI 11
+#define TFT_SCLK 5
+#define TFT_MOSI 23
 
-#define TFT_LED 6
+#define TFT_LED 12
+//minimal = 30
+#define DEF_BRIGHTNESS 80   
 
-#define DEF_BRIGHTNESS 30
+/// pwm backlight part
+#define PWM_FREQ 5000
+#define PWM_BACKLIGHT_CHANNEL 0
+#define PWM_RESOLUTION 8
+#define PWM_BACKLIGHT_PIN 12
+/// pwm ends
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 void invalidateState(Display *display);
 bool visible(Display *display);
@@ -29,8 +37,12 @@ void DisplayST7735::init() {
     this->brightness = DEF_BRIGHTNESS;
     this->enabled = true;
     tft.initR(INITR_144GREENTAB);
-    pinMode(TFT_LED, OUTPUT);
+    tft.fillScreen(ST7735_BLACK);
     invalidateState(this);
+
+    ledcSetup(PWM_BACKLIGHT_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(PWM_BACKLIGHT_PIN, PWM_BACKLIGHT_CHANNEL);
+    ledcWrite(PWM_BACKLIGHT_CHANNEL, DEF_BRIGHTNESS);
 }
 
 void DisplayST7735::update() {
@@ -77,11 +89,11 @@ void DisplayST7735::fill(uint16_t color) {
 
 void invalidateState(Display *display) {
     if(!visible(display)) {
-        analogWrite(TFT_LED, 0);
+        //analogWrite(TFT_LED, 0);
         return;
     }
 
-    analogWrite(TFT_LED, display->getBrightness());
+    //analogWrite(TFT_LED, display->getBrightness());
 }
 
 bool visible(Display *display) {
