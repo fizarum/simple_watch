@@ -1,26 +1,28 @@
 #include <Arduino.h>
 
+#include "ui/ui_controller.h"
 #include "dev/dev_controller.h"
+#include "dev/input_controller.h"
 #include "utils.h"
 
 #define REFRESH_DELAY 5000
 
-void init_button();
 unsigned long getLastRefreshDisplayTime();
-
-volatile bool showDisplay = true;
 unsigned long lastDisplayRefreshTime = 0;
-DevController *deviceController;
-/////
+
+const gpio_num_t menuButtonPin = GPIO_NUM_13;
+
+DevController *deviceController = new DevController();
+UIController *uiController = new UIController();
+InputController *inputController = new InputController(menuButtonPin);
 
 void setup() {
     
     set_cpu_speed_down();
 
-    deviceController = new DevController();
-
     deviceController->init();
-    init_button();
+    inputController->init();
+    //init_button();
     Serial.begin(115200);
 }
 
@@ -40,15 +42,6 @@ void loop() {
             //sprintf(text, "frq: %d", get_cpu_freq());
             deviceController->getDisplay()->text(text, 1, DisplayST7735::colorRed, 10, 10);
         }
-}
-
-void toggleDisplay() {
-    showDisplay = !showDisplay;
-}
-
-void init_button() {
-    pinMode(2, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(2), toggleDisplay, RISING);
 }
 
 unsigned long getLastRefreshDisplayTime() {
